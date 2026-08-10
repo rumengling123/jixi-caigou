@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.pyc
+
+# Generated data files (produced by scraper scripts)
+data.json
+other_platforms.json
+yixiang_data.json
+hljcg_yixiang.json
+bidchance_all.json
+bidchance_data.json
+hjlcg意向解析.json
+bidchance_鸡西意向.json
+
+# Generated HTML output
+index.html
+site/
+鸡西市政府采购项目统计.html
+
+# Windows-only scripts (Batch / PowerShell)
+run_daily.bat
+update_daily.ps1
+start_tunnel.bat
+tunnel_startup.ps1
+check_items.ps1
+verify_wucao.ps1
+update_server.py
+
+# Local tunnel / config
+tunnel_url.txt
+.consolidate-state.json
+yixiang_state.json
+buyer_manager_map.json
+
+# Scratch / exploration / debug scripts
+explore_*.py
+test_*.py
+scrape_yixiang*.py
+debug_*.py
+analyze_*.py
+bcd.py
+quick_check.py
+chk_html.py
+check_*.py
+cross_check.py
+verify_*.py
+scan_all_links.py
+scrape_bc.py
+scrape_bidchance.py
+wait_and_run.py
+
+# Log files
+*.log
+daily_run.log
+keepalive.log
+build_out.log
+surge_out.log
+
+# Text / data dumps
+*.txt
+*.B.txt
+
+# Reference xlsx (local only)
+客户经理集团明细.xlsx
+
+# Doc / analysis notes (keep only ARCHITECTURE.md)
+RECENT_FIX_2026-07-28.md
+ccgp_jixi_2026-07-31_path_fix.md
+ccgp_jixi_2026-08-07_budget_and_pager.md
+ccgp_jixi_2026-08-07_manager_column.md
+ccgp_jixi_2026-08-07_multi_source.md
+ccgp_jixi_2026-08-10_rebuild.md
+missing_analysis_final_20260729.md

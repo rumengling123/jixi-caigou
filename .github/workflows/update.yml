@@ -1,0 +1,59 @@
+name: 每日更新 + 发布
+
+on:
+  schedule:
+    # 北京时间 08:30 = UTC 00:30
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+    # 网页按钮手动触发
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  scrape-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: 1-抓取中国政府采购网
+        run: python3 scraper.py --full
+
+      - name: 2-抓取采购意向(bidchance)
+        run: python3 scrape_bc_all.py
+
+      - name: 3-解析采购意向
+        run: python3 parse_yixiang.py
+
+      - name: 4-转换采购意向
+        run: python3 build_yixiang.py
+
+      - name: 5-生成网页
+        run: |
+          python3 build_html.py
+          cp index.html site/index.html
+
+      - uses: actions/configure-pages@v4
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
