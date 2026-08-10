@@ -102,7 +102,7 @@ td a:hover{text-decoration:underline}
 <div class="container">
 <h1>🏛️ 鸡西地区政府采购项目统计</h1>
 <div class="sub">覆盖：鸡西市本级·鸡冠区·恒山区·鸡东县·城子河区·梨树区·麻山区·密山市·虎林市 ｜ 数据来源：中国政府采购网 + 其他采购平台 ｜ 统计范围：__RANGE__ ｜ 最近更新：__UPDATED__（每日 08:30 自动更新）</div>
-<div class="subbar"><button id="btnUpdate">🔄 实时更新</button><span id="updStatus"></span></div>
+<div class="subbar"><button id="btnUpdate" onclick="window.open('https://github.com/rumengling123/jixi-caigou/actions/workflows/update.yml','_blank')">🔄 手动触发更新</button><span id="updStatus" style="font-size:12px;color:#718096">（云端自动部署，或点击按钮手动触发）</span></div>
 <div class="cards" id="cards"></div>
 <div class="toolbar">
 <input id="kw" placeholder="🔍 搜索项目名称 / 采购人 / 代理机构...">
@@ -177,19 +177,6 @@ function render(){
  pg.innerHTML='共 '+filtered.length+' 条　'+html+'　<span style="font-size:13px;color:#718096">跳至</span> <input type="number" id="jumpPage" min="1" max="'+pages+'" value="'+cur+'" onkeydown="if(event.key===\'Enter\')jumpTo()"> <button class="go-btn" onclick="jumpTo()">GO</button>'+(pages>1?'<span style="font-size:13px;color:#a0aec0"> / 共'+pages+'页</span>':'')}
 function go(p){cur=Math.max(1,Math.min(p,Math.ceil(filtered.length/PAGE)||1));render();window.scrollTo(0,0)}
 function jumpTo(){var p=parseInt(document.getElementById('jumpPage').value);if(p>=1&&p<=Math.ceil(filtered.length/PAGE))go(p);else document.getElementById('jumpPage').value=cur}
-var UPDATE_URL='__UPDATE_URL__';
-document.getElementById('btnUpdate').addEventListener('click',function(){
- var btn=this;var st=document.getElementById('updStatus');
- if(btn.disabled)return;
- btn.disabled=true;btn.textContent='⏳ 更新中…';st.textContent='正在抓取最新数据…';
- fetch(UPDATE_URL+'/update').then(function(r){return r.json()}).then(function(d){
-  btn.disabled=false;btn.textContent='🔄 实时更新';
-  if(d.ok){st.textContent='✅ 更新完成！共 '+d.total_items+' 条，请刷新页面查看最新数据';}
-  else{st.textContent='❌ 更新失败：'+(d.error||'未知错误')}
- }).catch(function(e){
-  btn.disabled=false;btn.textContent='🔄 实时更新';st.textContent='❌ 网络错误，请稍后重试';
- });
-});
 document.getElementById('kw').addEventListener('input',apply);
 document.getElementById('fsource').addEventListener('change',apply);
 document.getElementById('fregion').addEventListener('change',apply);
@@ -220,15 +207,9 @@ merged_data = {
     "items": merged,
 }
 
-tunnel_file = HERE / "tunnel_url.txt"
-update_url = ""
-if tunnel_file.exists():
-    update_url = tunnel_file.read_text(encoding="utf-8").strip()
-
 html = (TEMPLATE
         .replace("__RANGE__", range_str)
         .replace("__UPDATED__", data.get("updated_at", ""))
-        .replace("__UPDATE_URL__", update_url)
         .replace("__DATA__", json.dumps(merged_data, ensure_ascii=False)))
 out = HERE / "鸡西市政府采购项目统计.html"
 out.write_text(html, encoding="utf-8")
