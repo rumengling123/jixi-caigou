@@ -14,7 +14,8 @@ bidchance_鸡西意向.json
 
 # Generated HTML output
 index.html
-site/
+site/*.html
+!site/.gitkeep
 鸡西市政府采购项目统计.html
 
 # Windows-only scripts (Batch / PowerShell)
