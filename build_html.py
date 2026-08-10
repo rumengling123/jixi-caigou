@@ -20,6 +20,7 @@ if yx_file.exists():
 
 # 加载采购人→客户经理映射
 mgr_map = {}
+keys_sorted = []
 map_file = HERE / "buyer_manager_map.json"
 if map_file.exists():
     mgr_data = json.loads(map_file.read_text(encoding="utf-8"))
