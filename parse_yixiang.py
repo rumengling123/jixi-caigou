@@ -4,7 +4,8 @@ Build data in format compatible with build_html.py
 """
 import json, re, os
 
-with open(r'C:\Users\Admin\.qclaw\workspace\ccgp_jixi\bidchance_all.json', 'r', encoding='utf-8') as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(BASE_DIR, 'bidchance_all.json'), 'r', encoding='utf-8') as f:
     raw = json.load(f)
 
 # 鸡西区县列表
@@ -91,7 +92,7 @@ for b, c in buyers.most_common(20):
     print(f'  {b}: {c}')
 
 # Save
-output = r'C:\Users\Admin\.qclaw\workspace\ccgp_jixi\hjlcg意向解析.json'
+output = os.path.join(BASE_DIR, 'hjlcg意向解析.json')
 with open(output, 'w', encoding='utf-8') as f:
     json.dump(yixiang, f, ensure_ascii=False, indent=2)
 print(f'\nSaved {len(yixiang)} items to {output}')

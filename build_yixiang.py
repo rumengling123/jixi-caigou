@@ -2,9 +2,10 @@
 transform yixiang data to data.json-compatible format
 and extract time from title patterns
 """
-import json, re
+import json, re, os
 
-with open(r'C:\Users\Admin\.qclaw\workspace\ccgp_jixi\hjlcg意向解析.json', 'r', encoding='utf-8') as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(BASE_DIR, 'hjlcg意向解析.json'), 'r', encoding='utf-8') as f:
     raw = json.load(f)
 
 def extract_time(title):
@@ -85,7 +86,7 @@ print(f'By category: {dict(cats)}')
 print(f'By area: {dict(areas)}')
 print(f'With budget: {sum(1 for i in items if i["budget"])}')
 
-output = r'C:\Users\Admin\.qclaw\workspace\ccgp_jixi\hljcg_yixiang.json'
+output = os.path.join(BASE_DIR, 'hljcg_yixiang.json')
 with open(output, 'w', encoding='utf-8') as f:
     json.dump(items, f, ensure_ascii=False, indent=2)
 print(f'\nSaved {len(items)} items to {output}')
