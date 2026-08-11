@@ -87,7 +87,7 @@ for i in jixi:
         'budget': normalize_amount(budget_raw) if budget_raw else '',
         'category': classify(title),
         'source': 'hljcg',
-        'contentId': i.get('contentId','') or i.get('id',''),
+        'contentId': i.get('id','') or i.get('noticeId',''),
     }
     converted.append(item)
 
