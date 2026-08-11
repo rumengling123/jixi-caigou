@@ -44,7 +44,7 @@ jobs:
       - name: 4-转换采购意向
         run: python3 build_yixiang.py
 
-      - name: 5-生成网页
+      - name: 5-生成网页 (含 hljcg 预算数据)
         env:
           PAGES_UPDATE_TOKEN: ${{ secrets.PAGES_UPDATE_TOKEN }}
         run: |

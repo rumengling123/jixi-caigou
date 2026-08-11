@@ -12,11 +12,12 @@ ext_file = HERE / "other_platforms.json"
 if ext_file.exists():
     ext_items = json.loads(ext_file.read_text(encoding="utf-8"))
 
-# 加载 hljcg 采购意向公告 (bidchance 转载)
-yixiang_items = []
-yx_file = HERE / "hljcg_yixiang.json"
-if yx_file.exists():
-    yixiang_items = json.loads(yx_file.read_text(encoding="utf-8"))
+# 加载 hljcg 采购公告 (黑龙江政府采购网 API)
+hljcg_items = []
+hljcg_file = HERE / "hljcg_budget.json"
+if hljcg_file.exists():
+    hljcg_data = json.loads(hljcg_file.read_text(encoding="utf-8"))
+    hljcg_items = hljcg_data.get("items", [])
 
 # 加载采购人→客户经理映射
 mgr_map = {}
@@ -47,7 +48,7 @@ for item in data.get("items", []):
 for item in ext_items:
     item["manager"] = find_manager(item.get("buyer", ""))
 
-for item in yixiang_items:
+for item in hljcg_items:
     item["manager"] = find_manager(item.get("buyer", ""))
 
 TEMPLATE = r"""<!DOCTYPE html>
@@ -84,7 +85,7 @@ td a:hover{text-decoration:underline}
 .tag-source{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;white-space:nowrap}
 .tag-source.ccgp{background:#e6fffa;color:#234e52}
 .tag-source.other{background:#fefcbf;color:#744210}
-.tag-source.yixiang{background:#f0fff4;color:#22543d}
+.tag-source.hljcg{background:#fff7ed;color:#9a3412}
 .pager{display:flex;gap:6px;justify-content:center;align-items:center;margin:14px 0;flex-wrap:wrap}
 .pager button{padding:6px 12px;border:1px solid #cbd5e0;background:#fff;border-radius:6px;cursor:pointer;font-size:13px}
 .pager button.on{background:#2b6cb0;color:#fff;border-color:#2b6cb0}
@@ -219,12 +220,14 @@ range_str = data["range"]
 if isinstance(range_str, (list, tuple)):
     range_str = " ~ ".join(str(x) for x in range_str)
 
-# 合并数据：ccgp + 外部平台 + 采购意向公告
-all_items = list(data.get("items", [])) + list(ext_items) + list(yixiang_items)
-# 去重
+# 合并数据：ccgp + 外部平台 + hljcg
+all_items = list(data.get("items", [])) + list(ext_items) + list(hljcg_items)
+# 去重：ccgp/外部用 url，hljcg 用 contentId
 uniq = {}
 for it in all_items:
-    uniq[it["url"]] = it
+    key = it.get("contentId") or it.get("url", "")
+    if key:
+        uniq[key] = it
 merged = sorted(uniq.values(), key=lambda x: x.get("time", ""), reverse=True)
 
 merged_data = {
@@ -253,4 +256,4 @@ print("OK ->", out, len(html), "bytes")
 print("Total items:", len(merged))
 print("  ccgp:", len(data.get("items", [])))
 print("  other platforms:", len(ext_items))
-print("  采购意向:", len(yixiang_items))
+print("  hljcg:", len(hljcg_items))
