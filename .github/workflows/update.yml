@@ -30,7 +30,11 @@ jobs:
           python-version: '3.12'
 
       - name: Install deps
-        run: pip install requests
+        run: |
+          pip install requests pillow pytesseract
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq tesseract-ocr
+          tesseract --version
 
       - name: 1-抓取中国政府采购网（增量）
         run: python3 scraper.py
@@ -44,18 +48,24 @@ jobs:
       - name: 4-转换采购意向
         run: python3 build_yixiang.py
 
-      - name: 5-生成网页 (含 hljcg 预算数据)
+      - name: 5-抓取黑龙江政府采购网预算公告 (hljcg, 含 Tesseract OCR 验证码)
+        run: python3 hljcg_github.py
+
+      - name: 6-转换 hljcg 数据
+        run: python3 convert_hljcg.py
+
+      - name: 7-生成网页
         env:
           PAGES_UPDATE_TOKEN: ${{ secrets.PAGES_UPDATE_TOKEN }}
         run: |
           python3 build_html.py
           cp index.html site/index.html
 
-      - name: 6-提交数据回仓库（增量持久化）
+      - name: 8-提交数据回仓库（增量持久化）
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json bidchance_all.json hljcg_yixiang.json hljcg意向解析.json other_platforms.json special_buyers_candidates.txt 2>/dev/null || true
+          git add data.json bidchance_all.json hljcg_yixiang.json hljcg意向解析.json other_platforms.json special_buyers_candidates.txt hljcg_budget.json hljcg_jixi_full.json 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No data changes to commit"
           else
@@ -72,7 +82,7 @@ jobs:
       - id: deployment
         uses: actions/deploy-pages@v4
 
-      - name: 7-发布到 Surge（国内可直接访问）
+      - name: 9-发布到 Surge（国内可直接访问）
         env:
           SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
         run: |
