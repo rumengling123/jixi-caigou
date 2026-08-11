@@ -71,3 +71,10 @@ jobs:
 
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: 7-发布到 Surge（国内可直接访问）
+        env:
+          SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
+        run: |
+          npm install -g surge
+          surge ./site jixi-caigou.surge.sh --token "$SURGE_TOKEN"
