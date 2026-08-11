@@ -32,8 +32,8 @@ jobs:
       - name: Install deps
         run: pip install requests
 
-      - name: 1-抓取中国政府采购网
-        run: python3 scraper.py --full
+      - name: 1-抓取中国政府采购网（增量）
+        run: python3 scraper.py
 
       - name: 2-抓取采购意向(bidchance)
         run: python3 scrape_bc_all.py
@@ -45,9 +45,23 @@ jobs:
         run: python3 build_yixiang.py
 
       - name: 5-生成网页
+        env:
+          PAGES_UPDATE_TOKEN: ${{ secrets.PAGES_UPDATE_TOKEN }}
         run: |
           python3 build_html.py
           cp index.html site/index.html
+
+      - name: 6-提交数据回仓库（增量持久化）
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json bidchance_all.json hljcg_yixiang.json hljcg意向解析.json other_platforms.json special_buyers_candidates.txt 2>/dev/null || true
+          if git diff --staged --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "auto: daily data update [skip ci]"
+            git push
+          fi
 
       - uses: actions/configure-pages@v4
 

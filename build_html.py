@@ -47,6 +47,9 @@ for item in data.get("items", []):
 for item in ext_items:
     item["manager"] = find_manager(item.get("buyer", ""))
 
+for item in yixiang_items:
+    item["manager"] = find_manager(item.get("buyer", ""))
+
 TEMPLATE = r"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -102,7 +105,7 @@ td a:hover{text-decoration:underline}
 <div class="container">
 <h1>🏛️ 鸡西地区政府采购项目统计</h1>
 <div class="sub">覆盖：鸡西市本级·鸡冠区·恒山区·鸡东县·城子河区·梨树区·麻山区·密山市·虎林市 ｜ 数据来源：中国政府采购网 + 其他采购平台 ｜ 统计范围：__RANGE__ ｜ 最近更新：__UPDATED__（每日 08:30 自动更新）</div>
-<div class="subbar"><button id="btnUpdate" onclick="window.open('https://github.com/rumengling123/jixi-caigou/actions/workflows/update.yml','_blank')">🔄 手动触发更新</button><span id="updStatus" style="font-size:12px;color:#718096">（云端自动部署，或点击按钮手动触发）</span></div>
+<div class="subbar"><button id="btnUpdate">🔄 手动更新</button><span id="updStatus" style="font-size:12px;color:#718096">（点击触发云端更新，约2-3分钟完成）</span></div>
 <div class="cards" id="cards"></div>
 <div class="toolbar">
 <input id="kw" placeholder="🔍 搜索项目名称 / 采购人 / 代理机构...">
@@ -177,6 +180,30 @@ function render(){
  pg.innerHTML='共 '+filtered.length+' 条　'+html+'　<span style="font-size:13px;color:#718096">跳至</span> <input type="number" id="jumpPage" min="1" max="'+pages+'" value="'+cur+'" onkeydown="if(event.key===\'Enter\')jumpTo()"> <button class="go-btn" onclick="jumpTo()">GO</button>'+(pages>1?'<span style="font-size:13px;color:#a0aec0"> / 共'+pages+'页</span>':'')}
 function go(p){cur=Math.max(1,Math.min(p,Math.ceil(filtered.length/PAGE)||1));render();window.scrollTo(0,0)}
 function jumpTo(){var p=parseInt(document.getElementById('jumpPage').value);if(p>=1&&p<=Math.ceil(filtered.length/PAGE))go(p);else document.getElementById('jumpPage').value=cur}
+document.getElementById('btnUpdate').addEventListener('click',function(){
+ var b=this,s=document.getElementById('updStatus');
+ if(b.disabled)return;
+ b.disabled=true;b.textContent='⏳ 提交中…';s.textContent='正在触发云端更新…';
+ fetch('https://api.github.com/repos/rumengling123/jixi-caigou/actions/workflows/update.yml/dispatches',{
+  method:'POST',
+  headers:{'Accept':'application/vnd.github+json','Authorization':'token __PAGES_UPDATE_TOKEN__'},
+  body:JSON.stringify({ref:'main'})
+ }).then(function(r){
+  if(r.status===204){
+   var i=0;
+   b.textContent='⏳ 更新中…';s.textContent='云端正在执行（约2-3分钟），完成后请刷新页面';var t=setInterval(function(){
+    s.textContent='云端正在执行（约2-3分钟'+'.'.repeat(i%4)+'）';
+    i++;
+   },800);
+   setTimeout(function(){clearInterval(t);s.textContent='✅ 更新完成！请刷新页面查看最新数据';
+    b.disabled=false;b.textContent='🔄 手动更新'},180000);
+  }else{
+   b.disabled=false;b.textContent='🔄 手动更新';s.textContent='❌ 触发失败，请稍后重试';
+  }
+ }).catch(function(){
+  b.disabled=false;b.textContent='🔄 手动更新';s.textContent='❌ 网络错误，请稍后重试';
+ });
+});
 document.getElementById('kw').addEventListener('input',apply);
 document.getElementById('fsource').addEventListener('change',apply);
 document.getElementById('fregion').addEventListener('change',apply);
@@ -211,6 +238,13 @@ html = (TEMPLATE
         .replace("__RANGE__", range_str)
         .replace("__UPDATED__", data.get("updated_at", ""))
         .replace("__DATA__", json.dumps(merged_data, ensure_ascii=False)))
+
+# 注入 GitHub token（从环境变量读取，不出现在源代码中）
+import os as _os
+pages_token = _os.environ.get('PAGES_UPDATE_TOKEN', '')
+if pages_token:
+    html = html.replace('__PAGES_UPDATE_TOKEN__', pages_token)
+
 out = HERE / "鸡西市政府采购项目统计.html"
 out.write_text(html, encoding="utf-8")
 # Also write index.html for surge deployment
