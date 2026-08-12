@@ -128,7 +128,7 @@ var DATA=__DATA__;
 var items=DATA.items;var PAGE=50;var cur=1;var filtered=items;
 function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 var REGION_ORDER=['鸡西市本级','鸡冠区','恒山区','鸡东县','城子河区','梨树区','麻山区','密山市','虎林市','其他'];
-var CAT_ORDER=['信息化','硬件','集成','软件','维保','其他'];
+var CAT_ORDER=['信息化软件','硬件','集成','维保','其他'];
 function stats(){
  var byType={};items.forEach(function(i){var t=i.type||'其他';byType[t]=(byType[t]||0)+1});
  var byRegion={};items.forEach(function(i){var r=i.region||'其他';byRegion[r]=(byRegion[r]||0)+1});
