@@ -251,7 +251,15 @@ html = (TEMPLATE
 
 # 注入 GitHub token（从环境变量读取，不出现在源代码中）
 import os as _os
+import subprocess as _sp
 pages_token = _os.environ.get('PAGES_UPDATE_TOKEN', '')
+if not pages_token:
+    # 本地环境：从 gh CLI 获取 token
+    try:
+        gh_path = r'C:\Program Files\GitHub CLI\gh.exe'
+        pages_token = _sp.run([gh_path, 'auth', 'token'], capture_output=True, text=True).stdout.strip()
+    except Exception:
+        pass
 if pages_token:
     html = html.replace('__PAGES_UPDATE_TOKEN__', pages_token)
 
