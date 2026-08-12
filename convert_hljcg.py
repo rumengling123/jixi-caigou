@@ -94,7 +94,7 @@ for i in jixi:
 print(f'Converted {len(converted)} items')
 
 with open(DST, 'w', encoding='utf-8') as f:
-    json.dump({'source': 'hljcg.hlj.gov.cn', 'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'total': len(converted), 'items': converted}, f, ensure_ascii=False, indent=2)
+    json.dump({'source': 'hljcg.hlj.gov.cn', 'updated_at': data.get('updated_at', datetime.now().strftime('%Y-%m-%d %H:%M:%S')), 'total': len(converted), 'items': converted}, f, ensure_ascii=False, indent=2)
 
 print(f'Saved to {DST}')
 print(f'File size: {os.path.getsize(DST)} bytes')

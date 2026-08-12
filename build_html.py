@@ -230,8 +230,15 @@ for it in all_items:
         uniq[key] = it
 merged = sorted(uniq.values(), key=lambda x: x.get("time", ""), reverse=True)
 
+# Calculate latest update time across all sources
+from datetime import datetime as _dt
+_ts = [data.get("updated_at", "")]
+if 'hljcg_data' in dir() and isinstance(hljcg_data, dict) and hljcg_data.get("updated_at"):
+    _ts.append(hljcg_data["updated_at"])
+_latest = max(_ts, key=lambda t: t if t else "")
+
 merged_data = {
-    "updated_at": data.get("updated_at", ""),
+    "updated_at": _latest,
     "range": data.get("range", range_str),
     "total": len(merged),
     "items": merged,
@@ -239,7 +246,7 @@ merged_data = {
 
 html = (TEMPLATE
         .replace("__RANGE__", range_str)
-        .replace("__UPDATED__", data.get("updated_at", ""))
+        .replace("__UPDATED__", _latest)
         .replace("__DATA__", json.dumps(merged_data, ensure_ascii=False)))
 
 # 注入 GitHub token（从环境变量读取，不出现在源代码中）
