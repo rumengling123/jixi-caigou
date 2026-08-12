@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>公告详情 - 鸡西政府采购</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;background:#f5f7fa;color:#333;min-height:100vh}
+.header{background:linear-gradient(135deg,#1a73e8,#0d47a1);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px}
+.header a{color:#fff;text-decoration:none;font-size:14px;opacity:.85}
+.header a:hover{opacity:1}
+.header h1{font-size:18px;font-weight:600}
+.container{max-width:900px;margin:20px auto;padding:0 16px}
+.card{background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:16px}
+.card h2{font-size:20px;font-weight:600;line-height:1.5;margin-bottom:16px;color:#1a1a1a}
+.meta{display:flex;flex-wrap:wrap;gap:12px 24px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid #eee;font-size:14px;color:#666}
+.meta-item{display:flex;align-items:center;gap:6px}
+.meta-label{color:#999}
+.meta-value{font-weight:500;color:#333}
+.tag{display:inline-block;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:500}
+.tag-type{background:#e3f2fd;color:#1565c0}
+.tag-region{background:#e8f5e9;color:#2e7d32}
+.tag-budget{background:#fff3e0;color:#e65100}
+.content{line-height:1.8;font-size:15px;color:#333;word-break:break-word}
+.content p{margin-bottom:12px}
+.loading{text-align:center;padding:60px 20px;color:#999;font-size:16px}
+.error{text-align:center;padding:40px 20px;color:#d32f2f}
+.spinner{display:inline-block;width:32px;height:32px;border:3px solid #e0e0e0;border-top-color:#1a73e8;border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.back-link{display:inline-flex;align-items:center;gap:4px}
+.attachments{margin-top:20px;padding-top:16px;border-top:1px solid #eee}
+.attachments h3{font-size:16px;margin-bottom:12px}
+.attachments a{display:block;padding:8px 12px;background:#f5f7fa;border-radius:6px;margin-bottom:6px;color:#1a73e8;text-decoration:none;font-size:14px}
+.attachments a:hover{background:#e8f0fe}
+@media(max-width:600px){.card{padding:16px}.card h2{font-size:17px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/" class="back-link">← 返回列表</a>
+  <h1>公告详情</h1>
+</div>
+<div class="container" id="app">
+  <div class="loading"><div class="spinner"></div><p>加载中...</p></div>
+</div>
+<script>
+(async function() {
+  const params = new URLSearchParams(location.search);
+  const noticeId = params.get('noticeId');
+  const title = params.get('title');
+  const region = params.get('region');
+  const budget = params.get('budget');
+  const noticeType = params.get('noticeType');
+  const purchaser = params.get('purchaser');
+  const time = params.get('time');
+  const openTenderTime = params.get('openTenderTime');
+
+  if (!noticeId) {
+    document.getElementById('app').innerHTML = '<div class="error">缺少公告 ID</div>';
+    return;
+  }
+
+  try {
+    const apiUrl = 'https://hljcg.hlj.gov.cn/gpcms/rest/web/v2/info/getInfoById?id=' + noticeId;
+    const resp = await fetch(apiUrl);
+    const json = await resp.json();
+    const data = json.data;
+
+    let contentHtml = '';
+    if (data && data.description) {
+      contentHtml = data.description.replace(/\n/g, '<br>');
+    } else if (data && data.content) {
+      contentHtml = data.content.replace(/\n/g, '<br>');
+    } else {
+      contentHtml = '<p style="color:#999">暂无详情内容，请前往 <a href="https://hljcg.hlj.gov.cn" target="_blank">黑龙江政府采购网</a> 查看原文。</p>';
+    }
+
+    let attachmentsHtml = '';
+    const attchs = data?.attchList || data?.attchs || [];
+    if (attchs.length > 0) {
+      attachmentsHtml = '<div class="attachments"><h3>附件</h3>' +
+        attchs.map(a => {
+          const name = a.fileName || a.name || '附件';
+          const url = a.filePath || a.url || '';
+          return url ? '<a href="' + url + '" target="_blank">' + name + '</a>' : '<span>' + name + '</span>';
+        }).join('') +
+        '</div>';
+    }
+
+    const displayTitle = title || (data && data.title) || '公告详情';
+    const displayRegion = region || (data && data.regionName) || '';
+    const displayBudget = budget ? (parseInt(budget)/10000).toFixed(2) + '万元' : (data && data.budget ? (parseInt(data.budget)/10000).toFixed(2) + '万元' : '');
+    const displayType = getTypeName(noticeType || (data && data.noticeType) || '');
+    const displayPurchaser = purchaser || (data && data.purchaser) || '';
+    const displayTime = time || (data && data.noticeTime) || '';
+    const displayOpenTime = openTenderTime || (data && data.openTenderTime) || '';
+    const displayAgency = data?.agency || '';
+
+    document.getElementById('app').innerHTML =
+      '<div class="card">' +
+        '<h2>' + escapeHtml(displayTitle) + '</h2>' +
+        '<div class="meta">' +
+          (displayType ? '<div class="meta-item"><span class="tag tag-type">' + escapeHtml(displayType) + '</span></div>' : '') +
+          (displayRegion ? '<div class="meta-item"><span class="tag tag-region">' + escapeHtml(displayRegion) + '</span></div>' : '') +
+          (displayBudget ? '<div class="meta-item"><span class="tag tag-budget">' + escapeHtml(displayBudget) + '</span></div>' : '') +
+          (displayPurchaser ? '<div class="meta-item"><span class="meta-label">采购人</span><span class="meta-value">' + escapeHtml(displayPurchaser) + '</span></div>' : '') +
+          (displayAgency ? '<div class="meta-item"><span class="meta-label">代理机构</span><span class="meta-value">' + escapeHtml(displayAgency) + '</span></div>' : '') +
+          (displayTime ? '<div class="meta-item"><span class="meta-label">发布时间</span><span class="meta-value">' + escapeHtml(displayTime) + '</span></div>' : '') +
+          (displayOpenTime ? '<div class="meta-item"><span class="meta-label">开标时间</span><span class="meta-value">' + escapeHtml(displayOpenTime) + '</span></div>' : '') +
+        '</div>' +
+        '<div class="content">' + contentHtml + '</div>' +
+        attachmentsHtml +
+      '</div>';
+  } catch(e) {
+    document.getElementById('app').innerHTML = '<div class="error">加载失败：' + escapeHtml(e.message) + '</div>';
+  }
+})();
+
+function getTypeName(code) {
+  const map = {'00101': '公开招标','00102': '邀请招标','00103': '竞争性谈判','00104': '询价','00105': '单一来源','00106': '竞争性磋商','00107': '框架协议','001011':'采购意向','001012':'需求公示','001013':'资格预审','001014':'中标/成交','001015':'更正/废标','001016':'采购公告'};
+  return map[code] || '采购公告';
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
