@@ -77,7 +77,7 @@ for i in jixi:
 
     item = {
         'title': title,
-        'url': '',  # hljcg doesn't provide direct URL in API, will construct from contentId
+        'url': f"https://hljcg.hlj.gov.cn/maincms-web/noticeInformation?subSystemCode=projectProcurement&noticeType={i.get('noticeType','')}&noticeId={i.get('noticeId','')}",
         'time': parse_time(publish_date),
         'buyer': purchaser,
         'type': notice_type if notice_type else '采购公告',
