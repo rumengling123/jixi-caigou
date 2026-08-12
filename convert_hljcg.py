@@ -29,6 +29,23 @@ def classify(title):
             return cat
     return '其他'
 
+def build_detail_url(i, title, purchaser, publish_date, budget_raw):
+    """Build URL to our detail.html page that fetches hljcg content via API"""
+    from urllib.parse import urlencode, quote
+    params = {
+        'noticeId': i.get('noticeId', ''),
+        'title': title,
+        'region': extract_region(title, purchaser),
+        'budget': budget_raw or '',
+        'noticeType': i.get('noticeType', ''),
+        'purchaser': purchaser,
+        'time': publish_date,
+        'openTenderTime': i.get('openTenderTime', ''),
+    }
+    # Use shorter query: only pass what detail.html actually needs
+    q = urlencode(params, quote_via=quote)
+    return f'detail.html?{q}'
+
 def normalize_amount(amount_str):
     """Amount is already in yuan in hljcg api, convert to 万元"""
     if not amount_str:
@@ -77,7 +94,7 @@ for i in jixi:
 
     item = {
         'title': title,
-        'url': f"https://hljcg.hlj.gov.cn/maincms-web/noticeInformation?subSystemCode=projectProcurement&noticeType={i.get('noticeType','')}&noticeId={i.get('noticeId','')}",
+        'url': build_detail_url(i, title, purchaser, publish_date, budget_raw),
         'time': parse_time(publish_date),
         'buyer': purchaser,
         'type': notice_type if notice_type else '采购公告',
