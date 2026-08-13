@@ -60,6 +60,8 @@ jobs:
         run: |
           python3 build_html.py
           cp index.html site/index.html
+          cp detail.html site/detail.html
+          cp hljcg_details.json site/hljcg_details.json
 
       - name: 8-提交数据回仓库（增量持久化）
         run: |
