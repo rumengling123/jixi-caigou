@@ -19,6 +19,13 @@ if hljcg_file.exists():
     hljcg_data = json.loads(hljcg_file.read_text(encoding="utf-8"))
     hljcg_items = hljcg_data.get("items", [])
 
+# 加载采购意向公告 (bidchance 转载的 hljcg 采购意向)
+yixiang_items = []
+yx_file = HERE / "hljcg_yixiang.json"
+if yx_file.exists():
+    yx = json.loads(yx_file.read_text(encoding="utf-8"))
+    yixiang_items = yx if isinstance(yx, list) else yx.get("items", [])
+
 # 加载采购人→客户经理映射
 mgr_map = {}
 keys_sorted = []
@@ -49,6 +56,9 @@ for item in ext_items:
     item["manager"] = find_manager(item.get("buyer", ""))
 
 for item in hljcg_items:
+    item["manager"] = find_manager(item.get("buyer", ""))
+
+for item in yixiang_items:
     item["manager"] = find_manager(item.get("buyer", ""))
 
 TEMPLATE = r"""<!DOCTYPE html>
@@ -220,8 +230,8 @@ range_str = data["range"]
 if isinstance(range_str, (list, tuple)):
     range_str = " ~ ".join(str(x) for x in range_str)
 
-# 合并数据：ccgp + 外部平台 + hljcg
-all_items = list(data.get("items", [])) + list(ext_items) + list(hljcg_items)
+# 合并数据：ccgp + 外部平台 + hljcg + 采购意向
+all_items = list(data.get("items", [])) + list(ext_items) + list(hljcg_items) + list(yixiang_items)
 # 去重：ccgp/外部用 url，hljcg 用 contentId
 uniq = {}
 for it in all_items:
@@ -272,3 +282,4 @@ print("Total items:", len(merged))
 print("  ccgp:", len(data.get("items", [])))
 print("  other platforms:", len(ext_items))
 print("  hljcg:", len(hljcg_items))
+print("  yixiang:", len(yixiang_items))

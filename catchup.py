@@ -5,7 +5,7 @@ import urllib3
 urllib3.disable_warnings()
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-KEYWORDS = ['虎林', '珍宝岛', '兴凯湖']
+KEYWORDS = ['虎林', '密山', '珍宝岛', '兴凯湖']
 SITE_ID = '94c965cc-c55d-4f92-8469-d5875c68bd04'
 CHANNEL_ID = 'c5bff13f-21ca-4dac-b158-cb40accd3035'
 API_BASE = 'https://hljcg.hlj.gov.cn'
@@ -16,6 +16,21 @@ with open(os.path.join(BASE_DIR, 'hljcg_verify_code.txt'), 'r') as f:
     verify = f.read().strip()
 print(f'Verify: {verify}')
 
+s = requests.Session()
+s.headers.update({
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Edg/151.0.0.0',
+    'Accept': 'application/json',
+    'Referer': f'{API_BASE}/maincms-web/noticeInformationHlj',
+})
+# Reuse WAF cookies saved by get_captcha.py so the verify code stays valid
+cookie_file = os.path.join(BASE_DIR, 'hljcg_waf_cookies.json')
+if os.path.exists(cookie_file):
+    with open(cookie_file, 'r', encoding='utf-8') as f:
+        cookies = json.load(f)
+    for name, value in cookies.items():
+        s.cookies.set(name, value, domain='hljcg.hlj.gov.cn')
+    print(f'Loaded {len(cookies)} WAF cookie(s)')
+
 # Load existing data
 existing_file = os.path.join(BASE_DIR, 'hljcg_jixi_full.json')
 with open(existing_file, 'r', encoding='utf-8') as f:
@@ -23,13 +38,6 @@ with open(existing_file, 'r', encoding='utf-8') as f:
 all_items = data.get('items', [])
 seen = {it.get('id','') or it.get('noticeId','') for it in all_items}
 print(f'Existing: {len(all_items)} items, {len(seen)} unique IDs')
-
-s = requests.Session()
-s.headers.update({
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Edg/151.0.0.0',
-    'Accept': 'application/json',
-    'Referer': f'{API_BASE}/maincms-web/noticeInformationHlj',
-})
 
 for kw in KEYWORDS:
     print(f'\nFetching: {kw}')

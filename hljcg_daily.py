@@ -125,8 +125,23 @@ def main():
     log(f'Got verify code: {verify}')
 
     session = get_session()
+
+    # 增量模式：先加载已有数据，避免验证码中途过期时覆盖丢失历史数据
+    raw_file = os.path.join(BASE_DIR, 'hljcg_jixi_full.json')
     all_items = []
     seen = set()
+    if os.path.exists(raw_file):
+        try:
+            with open(raw_file, 'r', encoding='utf-8') as f:
+                old = json.load(f)
+            for it in old.get('items', []):
+                cid = it.get('id', '') or it.get('noticeId', '')
+                if cid and cid not in seen:
+                    seen.add(cid)
+                    all_items.append(it)
+            log(f'Incremental mode: loaded {len(all_items)} existing items')
+        except Exception as e:
+            log(f'WARN: failed to load existing data: {e}')
 
     for kw in KEYWORDS:
         log(f'Fetching: {kw}')
@@ -147,7 +162,6 @@ def main():
         log(f'  Added {added} unique (total unique: {len(all_items)})')
 
     # Save raw
-    raw_file = os.path.join(BASE_DIR, 'hljcg_jixi_full.json')
     output = {
         'source': 'hljcg.hlj.gov.cn',
         'updated_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
