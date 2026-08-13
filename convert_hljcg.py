@@ -30,21 +30,9 @@ def classify(title):
     return '其他'
 
 def build_detail_url(i, title, purchaser, publish_date, budget_raw):
-    """Build URL to our detail.html page that fetches hljcg content via API"""
-    from urllib.parse import urlencode, quote
-    params = {
-        'noticeId': i.get('noticeId', ''),
-        'title': title,
-        'region': extract_region(title, purchaser),
-        'budget': budget_raw or '',
-        'noticeType': i.get('noticeType', ''),
-        'purchaser': purchaser,
-        'time': publish_date,
-        'openTenderTime': i.get('openTenderTime', ''),
-    }
-    # Use shorter query: only pass what detail.html actually needs
-    q = urlencode(params, quote_via=quote)
-    return f'detail.html?{q}'
+    """Build URL to our detail.html page (same-origin, reads hljcg_details.json)"""
+    nid = i.get('noticeId','') or i.get('id','')
+    return f'detail.html?noticeId={nid}'
 
 def normalize_amount(amount_str):
     """Amount is already in yuan in hljcg api, convert to 万元"""
@@ -105,6 +93,11 @@ for i in jixi:
         'category': classify(title),
         'source': 'hljcg',
         'contentId': i.get('id','') or i.get('noticeId',''),
+        'description': i.get('description','') or i.get('content','') or '',
+        'openTenderTime': i.get('openTenderTime','') or '',
+        'openTenderCode': i.get('openTenderCode','') or '',
+        'noticeType': i.get('noticeType','') or '',
+        'attchList': i.get('attchList',[]) or i.get('attchs',[]) or [],
     }
     converted.append(item)
 
@@ -128,3 +121,39 @@ for i in converted:
 print(f'With budget: {budgets}')
 print(f'Categories: {json.dumps(categories, ensure_ascii=False)}')
 print(f'Regions: {json.dumps(regions, ensure_ascii=False)}')
+
+# Build details lookup file (noticeId -> full item) for same-origin detail page
+DETAILS = os.path.join(BASE_DIR, 'hljcg_details.json')
+details = {}
+for it in converted:
+    nid = it.get('contentId','') or ''
+    # also index by noticeId if present in original
+    # use contentId (the UUID id) as primary key since detail.html uses noticeId param
+    key = nid
+    if key:
+        details[key] = it
+    # also index by noticeId
+    # find noticeId from original jixi list by matching contentId
+
+# Rebuild details keyed by noticeId (detail.html uses noticeId param)
+# converted items store contentId=id(UUID), but URL uses noticeId. Need both.
+# Re-map: iterate jixi original items to build noticeId -> converted item
+jixi_by_id = {}
+for i in jixi:
+    jixi_by_id[i.get('id','')] = i
+    jixi_by_id[i.get('noticeId','')] = i
+
+details = {}
+for it in converted:
+    cid = it.get('contentId','')
+    # find original item to get noticeId
+    orig = jixi_by_id.get(cid)
+    nid = (orig or {}).get('noticeId','') if orig else ''
+    key = nid or cid
+    if key:
+        details[key] = it
+
+with open(DETAILS, 'w', encoding='utf-8') as f:
+    json.dump(details, f, ensure_ascii=False)
+
+print(f'Saved details to {DETAILS} ({os.path.getsize(DETAILS)} bytes, {len(details)} entries)')

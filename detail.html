@@ -22,7 +22,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",s
 .tag-type{background:#e3f2fd;color:#1565c0}
 .tag-region{background:#e8f5e9;color:#2e7d32}
 .tag-budget{background:#fff3e0;color:#e65100}
-.content{line-height:1.8;font-size:15px;color:#333;word-break:break-word}
+.content{line-height:1.9;font-size:15px;color:#333;word-break:break-word;white-space:pre-wrap}
 .content p{margin-bottom:12px}
 .loading{text-align:center;padding:60px 20px;color:#999;font-size:16px}
 .error{text-align:center;padding:40px 20px;color:#d32f2f}
@@ -31,14 +31,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",s
 .back-link{display:inline-flex;align-items:center;gap:4px}
 .attachments{margin-top:20px;padding-top:16px;border-top:1px solid #eee}
 .attachments h3{font-size:16px;margin-bottom:12px}
-.attachments a{display:block;padding:8px 12px;background:#f5f7fa;border-radius:6px;margin-bottom:6px;color:#1a73e8;text-decoration:none;font-size:14px}
+.attachments a{display:block;padding:8px 12px;background:#f5f7fa;border-radius:6px;margin-bottom:6px;color:#1a73e8;text-decoration:none;font-size:14px;word-break:break-all}
 .attachments a:hover{background:#e8f0fe}
 @media(max-width:600px){.card{padding:16px}.card h2{font-size:17px}}
 </style>
 </head>
 <body>
 <div class="header">
-  <a href="/" class="back-link">← 返回列表</a>
+  <a href="./index.html" class="back-link">← 返回列表</a>
   <h1>公告详情</h1>
 </div>
 <div class="container" id="app">
@@ -48,54 +48,58 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",s
 (async function() {
   const params = new URLSearchParams(location.search);
   const noticeId = params.get('noticeId');
-  const title = params.get('title');
-  const region = params.get('region');
-  const budget = params.get('budget');
-  const noticeType = params.get('noticeType');
-  const purchaser = params.get('purchaser');
-  const time = params.get('time');
-  const openTenderTime = params.get('openTenderTime');
+  const contentId = params.get('contentId');
 
-  if (!noticeId) {
+  if (!noticeId && !contentId) {
     document.getElementById('app').innerHTML = '<div class="error">缺少公告 ID</div>';
     return;
   }
 
   try {
-    const apiUrl = 'https://hljcg.hlj.gov.cn/gpcms/rest/web/v2/info/getInfoById?id=' + noticeId;
-    const resp = await fetch(apiUrl);
-    const json = await resp.json();
-    const data = json.data;
+    // Read same-origin data (no CORS issue)
+    const resp = await fetch('./hljcg_details.json');
+    const all = await resp.json();
+    const key = noticeId || contentId;
+    let item = all[key];
 
-    let contentHtml = '';
-    if (data && data.description) {
-      contentHtml = data.description.replace(/\n/g, '<br>');
-    } else if (data && data.content) {
-      contentHtml = data.content.replace(/\n/g, '<br>');
-    } else {
-      contentHtml = '<p style="color:#999">暂无详情内容，请前往 <a href="https://hljcg.hlj.gov.cn" target="_blank">黑龙江政府采购网</a> 查看原文。</p>';
+    // Fallback: also match by contentId if noticeId not found
+    if (!item) {
+      for (const k in all) {
+        if (all[k].contentId === key || all[k].noticeId === key) {
+          item = all[k];
+          break;
+        }
+      }
     }
 
+    if (!item) {
+      document.getElementById('app').innerHTML = '<div class="error">未找到该公告详情</div>';
+      return;
+    }
+
+    const contentHtml = (item.description || '').replace(/\n/g, '<br>');
+
     let attachmentsHtml = '';
-    const attchs = data?.attchList || data?.attchs || [];
+    const attchs = item.attchList || [];
     if (attchs.length > 0) {
       attachmentsHtml = '<div class="attachments"><h3>附件</h3>' +
         attchs.map(a => {
           const name = a.fileName || a.name || '附件';
           const url = a.filePath || a.url || '';
-          return url ? '<a href="' + url + '" target="_blank">' + name + '</a>' : '<span>' + name + '</span>';
+          return url ? '<a href="' + url + '" target="_blank" rel="noopener">' + name + '</a>' : '<span>' + name + '</span>';
         }).join('') +
         '</div>';
     }
 
-    const displayTitle = title || (data && data.title) || '公告详情';
-    const displayRegion = region || (data && data.regionName) || '';
-    const displayBudget = budget ? (parseInt(budget)/10000).toFixed(2) + '万元' : (data && data.budget ? (parseInt(data.budget)/10000).toFixed(2) + '万元' : '');
-    const displayType = getTypeName(noticeType || (data && data.noticeType) || '');
-    const displayPurchaser = purchaser || (data && data.purchaser) || '';
-    const displayTime = time || (data && data.noticeTime) || '';
-    const displayOpenTime = openTenderTime || (data && data.openTenderTime) || '';
-    const displayAgency = data?.agency || '';
+    const displayTitle = item.title || '公告详情';
+    const displayRegion = item.region || '';
+    const displayBudget = item.budget || '';
+    const displayType = getTypeName(item.noticeType || '');
+    const displayPurchaser = item.buyer || '';
+    const displayAgency = item.agency || '';
+    const displayTime = item.time || '';
+    const displayOpenTime = item.openTenderTime || '';
+    const displayCode = item.openTenderCode || '';
 
     document.getElementById('app').innerHTML =
       '<div class="card">' +
@@ -106,10 +110,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",s
           (displayBudget ? '<div class="meta-item"><span class="tag tag-budget">' + escapeHtml(displayBudget) + '</span></div>' : '') +
           (displayPurchaser ? '<div class="meta-item"><span class="meta-label">采购人</span><span class="meta-value">' + escapeHtml(displayPurchaser) + '</span></div>' : '') +
           (displayAgency ? '<div class="meta-item"><span class="meta-label">代理机构</span><span class="meta-value">' + escapeHtml(displayAgency) + '</span></div>' : '') +
+          (displayCode ? '<div class="meta-item"><span class="meta-label">项目编号</span><span class="meta-value">' + escapeHtml(displayCode) + '</span></div>' : '') +
           (displayTime ? '<div class="meta-item"><span class="meta-label">发布时间</span><span class="meta-value">' + escapeHtml(displayTime) + '</span></div>' : '') +
           (displayOpenTime ? '<div class="meta-item"><span class="meta-label">开标时间</span><span class="meta-value">' + escapeHtml(displayOpenTime) + '</span></div>' : '') +
         '</div>' +
-        '<div class="content">' + contentHtml + '</div>' +
+        '<div class="content">' + (contentHtml || '<p style="color:#999">暂无详情内容。</p>') + '</div>' +
         attachmentsHtml +
       '</div>';
   } catch(e) {
@@ -118,7 +123,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",s
 })();
 
 function getTypeName(code) {
-  const map = {'00101': '公开招标','00102': '邀请招标','00103': '竞争性谈判','00104': '询价','00105': '单一来源','00106': '竞争性磋商','00107': '框架协议','001011':'采购意向','001012':'需求公示','001013':'资格预审','001014':'中标/成交','001015':'更正/废标','001016':'采购公告'};
+  const map = {'00101':'公开招标','00102':'邀请招标','00103':'竞争性谈判','00104':'询价','00105':'单一来源','00106':'竞争性磋商','00107':'框架协议','001011':'采购意向','001012':'需求公示','001013':'资格预审','001014':'中标/成交','001015':'更正/废标','001016':'采购公告'};
   return map[code] || '采购公告';
 }
 
