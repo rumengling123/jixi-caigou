@@ -32,6 +32,17 @@ def get_session():
         'Referer': f'{API_BASE}/maincms-web/noticeInformationHlj',
         'Origin': API_BASE,
     })
+    # Reuse WAF cookies saved by get_captcha.py so the verify code stays valid
+    cookie_file = os.path.join(BASE_DIR, 'hljcg_waf_cookies.json')
+    if os.path.exists(cookie_file):
+        try:
+            with open(cookie_file, 'r', encoding='utf-8') as f:
+                cookies = json.load(f)
+            for name, value in cookies.items():
+                s.cookies.set(name, value, domain='hljcg.hlj.gov.cn')
+            log(f'Loaded {len(cookies)} WAF cookie(s) from file')
+        except Exception as e:
+            log(f'WARN: failed to load cookies: {e}')
     return s
 
 def read_verify_code():
