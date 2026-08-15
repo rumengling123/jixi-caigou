@@ -259,17 +259,11 @@ html = (TEMPLATE
         .replace("__UPDATED__", _latest)
         .replace("__DATA__", json.dumps(merged_data, ensure_ascii=False)))
 
-# 注入 GitHub token（从环境变量读取，不出现在源代码中）
+# 注入 GitHub token（仅从环境变量显式读取；绝不从 gh CLI 自动获取，避免 token 泄露到公开网页/提交历史）
+# 安全约定：前端"手动更新"按钮的 token 不得硬编码进会被发布或提交的 HTML。
+# 如需启用该按钮，请在部署环境显式设置 PAGES_UPDATE_TOKEN 环境变量。
 import os as _os
-import subprocess as _sp
 pages_token = _os.environ.get('PAGES_UPDATE_TOKEN', '')
-if not pages_token:
-    # 本地环境：从 gh CLI 获取 token
-    try:
-        gh_path = r'C:\Program Files\GitHub CLI\gh.exe'
-        pages_token = _sp.run([gh_path, 'auth', 'token'], capture_output=True, text=True).stdout.strip()
-    except Exception:
-        pass
 if pages_token:
     html = html.replace('__PAGES_UPDATE_TOKEN__', pages_token)
 
