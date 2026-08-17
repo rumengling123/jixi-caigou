@@ -124,6 +124,7 @@ td a:hover{text-decoration:underline}
 <select id="fregion"><option value="">全部地区</option></select>
 <select id="fcat"><option value="">全部项目类别</option></select>
 <select id="ftype"><option value="">全部公告类型</option></select>
+<select id="fmgr"><option value="">全部负责人</option></select>
 <select id="fmonth"><option value="">全部月份</option></select>
 </div>
 <table>
@@ -156,6 +157,8 @@ function stats(){
  var sc=document.getElementById('fcat');CAT_ORDER.forEach(function(c){if(byCat[c]){var o=document.createElement('option');o.value=c;o.textContent=c+' ('+byCat[c]+')';sc.appendChild(o)}});
  var months={};items.forEach(function(i){var m=(i.time||'').slice(0,7);if(m)months[m]=(months[m]||0)+1});
  var sm=document.getElementById('fmonth');Object.keys(months).sort().reverse().forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=m.replace('.','年')+'月 ('+months[m]+')';sm.appendChild(o)});
+ var byMgr={};items.forEach(function(i){var m=(i.manager||'').trim();if(m)byMgr[m]=(byMgr[m]||0)+1});
+ var smg=document.getElementById('fmgr');Object.keys(byMgr).sort(function(a,b){return byMgr[b]-byMgr[a]}).forEach(function(m){var o=document.createElement('option');o.value=m;o.textContent=m+' ('+byMgr[m]+')';smg.appendChild(o)});
 }
 function apply(){
  var kw=document.getElementById('kw').value.trim().toLowerCase();
@@ -164,11 +167,13 @@ function apply(){
  var fm=document.getElementById('fmonth').value;
  var fr=document.getElementById('fregion').value;
  var fc=document.getElementById('fcat').value;
+ var fmgr=document.getElementById('fmgr').value;
  filtered=items.filter(function(i){
   if(fs&&(i.source||'中国政府采购网')!==fs)return false;
   if(fr&&(i.region||'其他')!==fr)return false;
   if(fc&&(i.category||'其他')!==fc)return false;
   if(ft&&(i.type||'其他')!==ft)return false;
+  if(fmgr&&(i.manager||'')!==fmgr)return false;
   if(fm&&(i.time||'').slice(0,7)!==fm)return false;
   if(kw&&!((i.title||'')+(i.buyer||'')+(i.agency||'')+(i.addr||'')).toLowerCase().includes(kw))return false;
   return true});
@@ -221,6 +226,7 @@ document.getElementById('fregion').addEventListener('change',apply);
 document.getElementById('fcat').addEventListener('change',apply);
 document.getElementById('ftype').addEventListener('change',apply);
 document.getElementById('fmonth').addEventListener('change',apply);
+document.getElementById('fmgr').addEventListener('change',apply);
 stats();render();
 </script>
 </body>
