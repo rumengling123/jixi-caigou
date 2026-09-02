@@ -1,0 +1,12 @@
+*.xlsx
+*.xls
+*.log
+*.png
+*.json
+!hljcg_budget.json
+!data.json
+!index.html
+!鸡西市政府采购项目统计.html
+__pycache__/
+.git/
+.github/
