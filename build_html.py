@@ -57,6 +57,12 @@ for item in ext_items:
 
 for item in hljcg_items:
     item["manager"] = find_manager(item.get("buyer", ""))
+    # 剥离重型字段：前端表格/搜索不需要正文 description，剥离可减小 HTML 体积并避免 json.dumps MemoryError
+    item.pop("description", None)
+    item.pop("attchList", None)
+    item.pop("openTenderCode", None)
+    item.pop("openTenderTime", None)
+    item.pop("noticeType", None)
 
 for item in yixiang_items:
     item["manager"] = find_manager(item.get("buyer", ""))
